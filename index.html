@@ -520,27 +520,38 @@
       return true;
     };
 
+    let hasSubmitted = false;
+
     cardNumber.addEventListener("input", () => {
       cardNumber.value = formatCardNumber(cardNumber.value);
-      validateCard();
+      if (hasSubmitted) {
+        validateCard();
+      }
     });
 
     expiry.addEventListener("input", () => {
       expiry.value = formatExpiry(expiry.value);
-      validateExpiry();
+      if (hasSubmitted) {
+        validateExpiry();
+      }
     });
 
     cvc.addEventListener("input", () => {
       cvc.value = sanitizeNumber(cvc.value).slice(0, 4);
-      validateCvc();
+      if (hasSubmitted) {
+        validateCvc();
+      }
     });
 
     email.addEventListener("input", () => {
-      validateEmail();
+      if (hasSubmitted) {
+        validateEmail();
+      }
     });
 
     form.addEventListener("submit", (event) => {
       event.preventDefault();
+      hasSubmitted = true;
       const isValid = [validateCard(), validateExpiry(), validateCvc(), validateEmail()].every(Boolean);
       if (isValid) {
         modal.classList.add("active");
@@ -560,7 +571,6 @@
       }
     });
 
-    [validateCard, validateExpiry, validateCvc, validateEmail].forEach((fn) => fn());
   </script>
 </body>
 </html>
