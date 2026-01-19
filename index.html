@@ -301,6 +301,30 @@
       margin: 10px 0 20px;
     }
 
+    .status-block {
+      display: none;
+    }
+
+    .status-block.active {
+      display: block;
+    }
+
+    .loader {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top-color: var(--accent);
+      animation: spin 1s linear infinite;
+      margin: 12px auto 20px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     .close {
       border: none;
       background: #23252c;
@@ -420,9 +444,16 @@
 
   <div class="modal" id="successModal" aria-hidden="true">
     <div class="modal-card">
-      <h3>Payment confirmed ✅</h3>
-      <p>Данные получены. Оплата прошла успешно, чек отправлен на вашу почту.</p>
-      <button class="close" type="button" id="closeModal">Закрыть</button>
+      <div class="status-block active" id="loadingState" aria-live="polite">
+        <div class="loader" aria-hidden="true"></div>
+        <h3>Обрабатываем оплату</h3>
+        <p>Подождите, это займет несколько секунд.</p>
+      </div>
+      <div class="status-block" id="successState" aria-live="polite">
+        <h3>Payment confirmed ✅</h3>
+        <p>Данные получены. Оплата прошла успешно, чек отправлен на вашу почту.</p>
+        <button class="close" type="button" id="closeModal">Закрыть</button>
+      </div>
     </div>
   </div>
 
@@ -434,6 +465,9 @@
     const email = document.getElementById("email");
     const modal = document.getElementById("successModal");
     const closeModal = document.getElementById("closeModal");
+    const loadingState = document.getElementById("loadingState");
+    const successState = document.getElementById("successState");
+    const submitButton = form.querySelector(".submit");
 
     const cardError = document.getElementById("cardError");
     const expiryError = document.getElementById("expiryError");
@@ -549,25 +583,54 @@
       }
     });
 
+    let paymentTimeout = null;
+
+    const resetModalState = () => {
+      loadingState.classList.add("active");
+      successState.classList.remove("active");
+    };
+
+    const showSuccess = () => {
+      loadingState.classList.remove("active");
+      successState.classList.add("active");
+      submitButton.disabled = false;
+    };
+
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       hasSubmitted = true;
       const isValid = [validateCard(), validateExpiry(), validateCvc(), validateEmail()].every(Boolean);
       if (isValid) {
+        submitButton.disabled = true;
+        resetModalState();
         modal.classList.add("active");
         modal.setAttribute("aria-hidden", "false");
+        if (paymentTimeout) {
+          clearTimeout(paymentTimeout);
+        }
+        paymentTimeout = setTimeout(showSuccess, 4200);
       }
     });
 
     closeModal.addEventListener("click", () => {
       modal.classList.remove("active");
       modal.setAttribute("aria-hidden", "true");
+      if (paymentTimeout) {
+        clearTimeout(paymentTimeout);
+        paymentTimeout = null;
+      }
+      resetModalState();
     });
 
     modal.addEventListener("click", (event) => {
       if (event.target === modal) {
         modal.classList.remove("active");
         modal.setAttribute("aria-hidden", "true");
+        if (paymentTimeout) {
+          clearTimeout(paymentTimeout);
+          paymentTimeout = null;
+        }
+        resetModalState();
       }
     });
 
